@@ -1,42 +1,95 @@
+import EditContact from "../views/EditContact";
+
 const getState = ({ getStore, getActions, setStore }) => {
 	return {
 		store: {
-			demo: [
-				{
-					title: "FIRST",
-					background: "white",
-					initial: "white"
-				},
-				{
-					title: "SECOND",
-					background: "white",
-					initial: "white"
-				}
-			]
+			contacts: [],
 		},
 		actions: {
 			// Use getActions to call a function within a fuction
-			exampleFunction: () => {
-				getActions().changeColor(0, "green");
-			},
-			loadSomeData: () => {
+			getContacts: () => {
 				/**
 					fetch().then().then(data => setStore({ "foo": data.bar }))
 				*/
+				fetch("https://playground.4geeks.com/contact/agendas/DanielCP/contacts")
+					.then((response) => {
+						if (!response.ok) {
+							throw Error(response.statusText)
+						}
+						return response.json()
+					})
+					.then((data) => {
+						setStore({ contacts: data.contacts })
+
+					})
+					.catch((err) => {
+						console.error("Error en getContacts:", err);
+						getActions().createAgenda(); // Solo si decides esta opción
+					});
 			},
-			changeColor: (index, color) => {
-				//get the store
-				const store = getStore();
 
-				//we have to loop the entire demo array to look for the respective index
-				//and change its color
-				const demo = store.demo.map((elm, i) => {
-					if (i === index) elm.background = color;
-					return elm;
-				});
+			createAgenda: () => {
+				fetch("https://playground.4geeks.com/contact/agendas/DanielCP", {
+					method: "POST"
+				})
+					.then((response) => {
+						if (!response.ok) throw Error(response.statusText)
+					})
 
-				//reset the global store
-				setStore({ demo: demo });
+					.catch((err) => { err })
+			},
+
+			newContact: (contactData) => {
+				fetch("https://playground.4geeks.com/contact/agendas/DanielCP/contacts", {
+					method: "POST",
+					body: JSON.stringify(contactData),
+					headers: {
+						"Content-Type": "application/json"
+					}
+				})
+					.then((response) => {
+						if (!response.ok) throw Error(response.statusText)
+					})
+
+					.then(() => {
+						console.log("Contacto agregado con éxito")
+						getActions().getContacts()
+					})
+
+					.catch((err) => { err })
+			},
+
+			editContact: (contactData, idContact) => {
+				fetch(`https://playground.4geeks.com/contact/agendas/DanielCP/contacts/${idContact}`, {
+					method: "PUT",
+					body: JSON.stringify(contactData),
+					headers: {
+						"Content-Type": "application/json"
+					}
+				})
+					.then((response) => {
+						if (!response.ok) throw Error(response.statusText)
+					})
+
+					.then(() => {
+						console.log("Contacto editado con éxito")
+						getActions().getContacts()
+					})
+
+					.catch((err) => { err })
+			},
+
+			deleteContact: (idContact) => {
+				fetch(`https://playground.4geeks.com/contact/agendas/DanielCP/contacts/${idContact}`, {
+					method: "DELETE"
+				})
+					.then((response) => {
+						if (response.ok) {
+							console.log("Contacto borrado con éxito")
+							getActions().getContacts()
+						}
+					})
+					.catch(err => { err })
 			}
 		}
 	};
